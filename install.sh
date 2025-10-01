@@ -45,7 +45,7 @@ if [ -d "$BOT_PATH" ]; then
     cd "$BOT_PATH"
     git pull origin master || print_warning "Failed to update repository"
 else
-    git clone https://github.com/ArashAfkandeh/DLBot.git "$BOT_PATH" || {
+    git clone https://github.com/ArashAfkandeh/Telegram-File-to-Link.git "$BOT_PATH" || {
         print_error "Failed to clone repository"
         exit 1
     }
