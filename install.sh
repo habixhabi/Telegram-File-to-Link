@@ -40,15 +40,32 @@ apt install -y python3 python3-pip python3-venv nginx socat curl wget git
 
 # Clone repository from GitHub
 print_message "Cloning repository from GitHub..."
+TEMP_DIR="/tmp/telegram-bot-temp"
+rm -rf "$TEMP_DIR"  # Clean up any previous temporary directory
+
 if [ -d "$BOT_PATH" ]; then
     print_warning "Directory $BOT_PATH already exists, updating..."
     cd "$BOT_PATH"
     git pull origin master || print_warning "Failed to update repository"
 else
-    git clone https://github.com/ArashAfkandeh/Telegram-File-to-Link.git "$BOT_PATH" || {
+    # Clone to temporary directory first
+    git clone https://github.com/ArashAfkandeh/Telegram-File-to-Link.git "$TEMP_DIR" || {
         print_error "Failed to clone repository"
         exit 1
     }
+    
+    # Create bot directory
+    mkdir -p "$BOT_PATH"
+    
+    # Move all files from temp directory to bot directory
+    mv "$TEMP_DIR"/* "$BOT_PATH"/ || {
+        print_error "Failed to move files"
+        exit 1
+    }
+    
+    # Clean up temporary directory
+    rm -rf "$TEMP_DIR"
+    print_message "Repository files moved to $BOT_PATH successfully"
 fi
 
 # Install or update required Python packages
