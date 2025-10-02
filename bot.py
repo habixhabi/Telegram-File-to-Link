@@ -438,7 +438,6 @@ async def handle_file(client: Client, message: Message):
     """
     # کنترل دسترسی
     if not is_allowed_chat(message.chat.id):
-        await message.reply_text("🚫 دسترسی شما به این ربات محدود شده است")
         return
     
     # ایجاد وضعیت دانلود جدید
@@ -656,7 +655,6 @@ async def handle_callback_query(client: Client, callback_query: CallbackQuery):
     try:
         # کنترل دسترسی
         if not is_allowed_chat(callback_query.message.chat.id):
-            await callback_query.answer("🚫 دسترسی شما به این ربات محدود شده است", show_alert=True)
             return
         
         # استخراج download_id از callback data
@@ -756,7 +754,6 @@ async def start_command(client: Client, message: Message):
     """
     # کنترل دسترسی
     if not is_allowed_chat(message.chat.id):
-        await message.reply_text("🚫 دسترسی شما به این ربات محدود شده است")
         return
     
     # ایجاد دکمه‌های تعاملی
@@ -793,7 +790,6 @@ async def help_command(client: Client, message: Message):
     """
     # کنترل دسترسی
     if not is_allowed_chat(message.chat.id):
-        await message.reply_text("🚫 دسترسی شما به این ربات محدود شده است")
         return
     
     # ایجاد متن دستورات
@@ -819,7 +815,6 @@ async def proxy_command(client: Client, message: Message):
     """
     # کنترل دسترسی
     if not is_allowed_chat(message.chat.id):
-        await message.reply_text("🚫 دسترسی شما به این ربات محدود شده است")
         return
     
     proxy_status = get_proxy_config()
@@ -863,7 +858,6 @@ async def status_command(client: Client, message: Message):
     """
     # کنترل دسترسی
     if not is_allowed_chat(message.chat.id):
-        await message.reply_text("🚫 دسترسی شما به این ربات محدود شده است")
         return
     
     try:
@@ -909,7 +903,6 @@ async def config_command(client: Client, message: Message):
     """
     # کنترل دسترسی
     if not is_allowed_chat(message.chat.id):
-        await message.reply_text("🚫 دسترسی شما به این ربات محدود شده است")
         return
     
     try:
@@ -956,7 +949,6 @@ async def handle_commands(client: Client, message: Message):
     """
     # کنترل دسترسی
     if not is_allowed_chat(message.chat.id):
-        await message.reply_text("⛔️ شما مجوز استفاده از این ربات را ندارید.")
         return
 
     command = message.command[0] if message.command else ""
