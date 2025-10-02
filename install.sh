@@ -4,6 +4,10 @@
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+MAGENTA='\033[0;35m'
+CYAN='\033[0;36m'
+BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 # Message display functions
@@ -19,9 +23,53 @@ print_warning() {
     echo -e "${YELLOW}[!]${NC} $1"
 }
 
-# Important paths
-BOT_PATH="/root/Telegram-File-to-Link"
-BOT_SERVICE="/etc/systemd/system/dlbot.service"
+print_info() {
+    echo -e "${CYAN}[i]${NC} $1"
+}
+
+print_step() {
+    echo -e "\n${MAGENTA}┌─────────────────────────────────────┐${NC}"
+    echo -e "${MAGENTA}│${NC} ${BOLD}$1${NC}"
+    echo -e "${MAGENTA}└─────────────────────────────────────┘${NC}\n"
+}
+
+print_input_prompt() {
+    echo -en "${BLUE}$1${NC}"
+}
+
+# Important paths and names
+BOT_PATH="/opt/Telegram-File-to-Link"
+SERVICE_NAME="$(basename "$BOT_PATH")"
+BOT_SERVICE="/etc/systemd/system/$SERVICE_NAME.service"
+
+# Check for uninstall parameter immediately
+if [ "$1" = "--uninstall" ]; then
+    print_step "🗑️ Uninstalling Telegram File to Link Bot"
+    
+    # Stop and disable service
+    print_message "Stopping and disabling bot service..."
+    systemctl stop "$SERVICE_NAME.service"
+    systemctl disable "$SERVICE_NAME.service"
+    rm -f "/etc/systemd/system/$SERVICE_NAME.service"
+    systemctl daemon-reload
+    
+    # Remove nginx configuration
+    print_message "Removing nginx configuration..."
+    rm -f "/etc/nginx/sites-enabled/$SERVICE_NAME"
+    rm -f "/etc/nginx/sites-available/$SERVICE_NAME"
+    systemctl restart nginx
+    
+    # Remove bot files
+    print_message "Removing bot files..."
+    rm -rf "$BOT_PATH"
+    rm -rf "/var/www/html/dl"
+    
+    print_message "✨ Bot uninstalled successfully!"
+    echo
+    print_warning "Note: SSL certificates were preserved at /root/cert/"
+    print_warning "You can manually remove them if needed."
+    exit 0
+fi
 
 # Check for root privileges
 if [ "$EUID" -ne 0 ]; then
@@ -40,18 +88,23 @@ apt install -y python3 python3-pip python3-venv nginx socat curl wget git
 
 # Clone repository from GitHub
 print_message "Cloning repository from GitHub..."
+git clone https://github.com/ArashAfkandeh/Telegram-File-to-Link.git || {
+    print_error "Failed to clone repository"
+    exit 1
+}
+
+# Move to /opt
+print_message "Moving to $BOT_PATH..."
 if [ -d "$BOT_PATH" ]; then
-    print_warning "Directory $BOT_PATH already exists, updating..."
-    cd "$BOT_PATH"
-    git pull origin master || print_warning "Failed to update repository"
-else
-    # Clone repository directly to BOT_PATH
-    git clone https://github.com/ArashAfkandeh/Telegram-File-to-Link.git "$BOT_PATH" || {
-        print_error "Failed to clone repository"
-        exit 1
-    }
-    print_message "Repository cloned to $BOT_PATH successfully"
+    rm -rf "$BOT_PATH"
 fi
+mv Telegram-File-to-Link "$BOT_PATH"
+print_message "Repository installed to $BOT_PATH successfully"
+
+# Set proper permissions for the bot directory
+print_message "Setting proper permissions..."
+chown -R www-data:www-data "$BOT_PATH"
+chmod -R 755 "$BOT_PATH"
 
 # Install or update required Python packages
 print_message "Installing Python libraries..."
@@ -64,21 +117,69 @@ mkdir -p /var/www/html/dl
 chown -R www-data:www-data /var/www/html
 chmod -R 755 /var/www/html
 
-# Get domain and email
+# Get command line arguments
+print_step "💫 Welcome to Telegram File Hosting Bot Setup 💫"
+print_info "Please provide the following information to configure your bot:"
+echo
+
 if [ -z "$1" ]; then
-    read -p "🌐 Please enter domain name: " HOST
+    print_input_prompt "🌐 Enter your domain name: "
+    read HOST
+    while [ -z "$HOST" ]; do
+        print_error "Domain name cannot be empty"
+        print_input_prompt "🌐 Please enter your domain name: "
+        read HOST
+    done
 else
     HOST="$1"
+    print_message "Domain name: $HOST"
 fi
 
 if [ -z "$2" ]; then
-    read -p "📧 Please enter email address: " EMAIL
+    print_input_prompt "📧 Enter your email address: "
+    read EMAIL
     while [ -z "$EMAIL" ]; do
         print_error "Email cannot be empty"
-        read -p "📧 Please enter email address: " EMAIL
+        print_input_prompt "📧 Please enter your email address: "
+        read EMAIL
     done
 else
     EMAIL="$2"
+    print_message "Email address: $EMAIL"
+fi
+
+if [ -z "$3" ]; then
+    echo -e "\n${CYAN}ℹ️  To get API credentials:${NC}"
+    echo -e "   1. Go to ${BLUE}https://my.telegram.org/apps${NC}"
+    echo -e "   2. Create a new application"
+    echo -e "   3. Copy the ${YELLOW}api_id${NC} and ${YELLOW}api_hash${NC}\n"
+    
+    print_input_prompt "🔑 Enter your Telegram api_id: "
+    read API_ID
+else
+    API_ID="$3"
+    print_message "API ID configured"
+fi
+
+if [ -z "$4" ]; then
+    print_input_prompt "🔑 Enter your Telegram api_hash: "
+    read API_HASH
+else
+    API_HASH="$4"
+    print_message "API Hash configured"
+fi
+
+if [ -z "$5" ]; then
+    echo -e "\n${CYAN}ℹ️  To get a bot token:${NC}"
+    echo -e "   1. Start a chat with ${BLUE}@BotFather${NC} on Telegram"
+    echo -e "   2. Send /newbot and follow the instructions"
+    echo -e "   3. Copy the provided token\n"
+    
+    print_input_prompt "🤖 Enter your bot token: "
+    read BOT_TOKEN
+else
+    BOT_TOKEN="$5"
+    print_message "Bot token configured"
 fi
 
 # SSL variables
@@ -88,7 +189,7 @@ CHAIN_FILE="$CERT_DIR/fullchain.pem"
 
 # Set up temporary nginx config for ACME challenge
 print_message "Configuring nginx for domain ownership verification..."
-cat > /etc/nginx/sites-available/dlbot << EOL
+cat > "/etc/nginx/sites-available/$SERVICE_NAME" << EOL
 server {
     listen 80;
     listen [::]:80;
@@ -105,10 +206,22 @@ server {
 }
 EOL
 
-# Enable temporary configuration
-ln -sf /etc/nginx/sites-available/dlbot /etc/nginx/sites-enabled/
+# Clean up any erroneous directories or files in sites-enabled
 rm -f /etc/nginx/sites-enabled/default
-nginx -t && systemctl restart nginx
+if [ -d "/etc/nginx/sites-enabled/sites-available" ]; then
+    rm -rf "/etc/nginx/sites-enabled/sites-available"
+    print_warning "Removed erroneous 'sites-available' directory in sites-enabled"
+fi
+rm -f "/etc/nginx/sites-enabled/$SERVICE_NAME"
+
+# Enable temporary configuration
+ln -sf "/etc/nginx/sites-available/$SERVICE_NAME" "/etc/nginx/sites-enabled/$SERVICE_NAME"
+
+# Test and restart nginx
+nginx -t && systemctl restart nginx || {
+    print_error "Nginx configuration test failed during temporary setup!"
+    exit 1
+}
 
 # Install acme.sh if not already installed
 if [ ! -d "$HOME/.acme.sh" ]; then
@@ -156,9 +269,9 @@ fi
 # Weekly cronjob (Sunday 00:00)
 (crontab -l 2>/dev/null; echo "0 0 * * 0 ~/.acme.sh/acme.sh --cron --home ~/.acme.sh > /dev/null") | sort -u | crontab -
 
-# Configure nginx
+# Configure nginx with optimized settings
 print_message "Configuring nginx with SSL..."
-cat > /etc/nginx/sites-available/dlbot << EOL
+cat > "/etc/nginx/sites-available/$SERVICE_NAME" << EOL
 server {
     listen 80;
     listen [::]:80;
@@ -173,22 +286,32 @@ server {
 
     ssl_certificate $CHAIN_FILE;
     ssl_certificate_key $KEY_FILE;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384;
+    ssl_protocols TLSv1.3;
     ssl_prefer_server_ciphers off;
+    ssl_ciphers EECDH+CHACHA20:EECDH+AESGCM:EECDH+AES;
     ssl_session_timeout 1d;
-    ssl_session_cache shared:SSL:50m;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_tickets off;
     ssl_stapling on;
     ssl_stapling_verify on;
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
+    add_header X-Frame-Options DENY always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-XSS-Protection "1; mode=block" always;
 
     root /var/www/html;
     index index.html;
+
+    gzip on;
+    gzip_types text/plain application/xml text/css application/javascript;
+    gzip_min_length 1000;
 
     location /dl/ {
         alias /var/www/html/dl/;
         autoindex off;
         try_files \$uri \$uri/ =404;
+        expires 30d;
+        add_header Cache-Control "public";
     }
 
     location / {
@@ -197,9 +320,16 @@ server {
 }
 EOL
 
-# Enable nginx configuration
-ln -sf /etc/nginx/sites-available/dlbot /etc/nginx/sites-enabled/
+# Clean up before enabling
 rm -f /etc/nginx/sites-enabled/default
+if [ -d "/etc/nginx/sites-enabled/sites-available" ]; then
+    rm -rf "/etc/nginx/sites-enabled/sites-available"
+    print_warning "Removed erroneous 'sites-available' directory in sites-enabled"
+fi
+rm -f "/etc/nginx/sites-enabled/$SERVICE_NAME"
+
+# Enable nginx configuration
+ln -sf "/etc/nginx/sites-available/$SERVICE_NAME" "/etc/nginx/sites-enabled/$SERVICE_NAME"
 
 # Check nginx configuration
 nginx -t
@@ -226,18 +356,20 @@ else
 fi
 
 # Create systemd service
-print_message "Creating systemd service for the bot..."
-cat > /etc/systemd/system/telegrambot.service << 'EOL'
+print_step "🔧 Creating System Service"
+print_message "Setting up systemd service for the bot..."
+
+cat > "$BOT_SERVICE" << EOL
 [Unit]
-Description=Telegram File Saver Bot
+Description=Telegram File to Link Bot
 After=network.target
 
 [Service]
 Type=simple
 User=www-data
 Group=www-data
-WorkingDirectory=/var/www/html/bot
-ExecStart=/usr/bin/python3 /var/www/html/bot/bot.py
+WorkingDirectory=$BOT_PATH
+ExecStart=/usr/bin/python3 $BOT_PATH/bot.py
 Restart=always
 RestartSec=10
 
@@ -275,77 +407,37 @@ validate_bot_token() {
     return 0
 }
 
-# Get api_id with validation
-for i in {1..3}; do
-    read -p "🔑 Please enter Telegram api_id: " API_ID
-    if [ -z "$API_ID" ]; then
-        print_error "api_id cannot be empty (attempt $i of 3)"
-        if [ $i -eq 3 ]; then
-            print_error "Maximum attempts reached. Exiting..."
-            exit 1
-        fi
-        continue
-    fi
-    if ! validate_api_id "$API_ID"; then
-        print_error "api_id must be an integer (attempt $i of 3)"
-        if [ $i -eq 3 ]; then
-            print_error "Maximum attempts reached. Exiting..."
-            exit 1
-        fi
-        continue
-    fi
-    break
-done
+# Validate api_id
+if ! validate_api_id "$API_ID"; then
+    print_error "api_id must be an integer"
+    exit 1
+fi
 
-# Get api_hash with validation
-for i in {1..3}; do
-    read -p "🔑 Please enter Telegram api_hash: " API_HASH
-    if [ -z "$API_HASH" ]; then
-        print_error "api_hash cannot be empty (attempt $i of 3)"
-        if [ $i -eq 3 ]; then
-            print_error "Maximum attempts reached. Exiting..."
-            exit 1
-        fi
-        continue
-    fi
-    if ! validate_api_hash "$API_HASH"; then
-        print_error "api_hash must be a 32-character hexadecimal string (attempt $i of 3)"
-        if [ $i -eq 3 ]; then
-            print_error "Maximum attempts reached. Exiting..."
-            exit 1
-        fi
-        continue
-    fi
-    break
-done
+# Validate api_hash
+if ! validate_api_hash "$API_HASH"; then
+    print_error "api_hash must be a 32-character hexadecimal string"
+    exit 1
+fi
 
-# Get bot_token with validation
-for i in {1..3}; do
-    read -p "🤖 Please enter bot token: " BOT_TOKEN
-    if [ -z "$BOT_TOKEN" ]; then
-        print_error "Bot token cannot be empty (attempt $i of 3)"
-        if [ $i -eq 3 ]; then
-            print_error "Maximum attempts reached. Exiting..."
-            exit 1
-        fi
-        continue
-    fi
-    if ! validate_bot_token "$BOT_TOKEN"; then
-        print_error "Invalid bot token format (attempt $i of 3)"
-        if [ $i -eq 3 ]; then
-            print_error "Maximum attempts reached. Exiting..."
-            exit 1
-        fi
-        continue
-    fi
-    break
-done
+# Validate bot_token
+if ! validate_bot_token "$BOT_TOKEN"; then
+    print_error "Invalid bot token format"
+    exit 1
+fi
 
-# Get allowed user IDs
-read -p "👥 Enter allowed user IDs (comma-separated or Enter for public access): " ALLOWED_USERS
+print_step "👥 User Access Configuration 👥"
+echo -e "${CYAN}ℹ️  User Access Control:${NC}"
+echo -e "   ${YELLOW}•${NC} You can restrict bot access to specific users"
+echo -e "   ${YELLOW}•${NC} Enter Telegram user IDs separated by commas"
+echo -e "   ${YELLOW}•${NC} Leave empty to allow access for all users"
+echo -e "   ${YELLOW}•${NC} Example: 123456789,987654321\n"
+
+print_input_prompt "Enter allowed user IDs (press Enter for public access): "
+read ALLOWED_USERS
+
 if [ -z "$ALLOWED_USERS" ]; then
     ALLOWED_JSON="[]"
-    print_message "Access enabled for all users"
+    print_message "✨ Bot will be accessible to all users"
 else
     IFS=',' read -ra ALLOWED_ARRAY <<< "$ALLOWED_USERS"
     ALLOWED_JSON="["
@@ -356,14 +448,28 @@ else
         fi
     done
     ALLOWED_JSON+="]"
-    print_message "Access configured for ${#ALLOWED_ARRAY[@]} users"
+    print_message "🔒 Access restricted to ${#ALLOWED_ARRAY[@]} specified users"
 fi
 
-# Get maximum file age
-read -p "⏳ Maximum file age in hours (Enter = 24): " MAX_AGE
+print_step "⚙️ File Management Settings ⚙️"
+echo -e "${CYAN}ℹ️  About File Age Limit:${NC}"
+echo -e "   ${YELLOW}•${NC} Files older than this limit will be automatically deleted"
+echo -e "   ${YELLOW}•${NC} This helps manage server storage space"
+echo -e "   ${YELLOW}•${NC} Recommended: 24-72 hours depending on your needs"
+echo -e "   ${YELLOW}•${NC} Users should download their files within this time\n"
+
+print_input_prompt "Enter maximum file age in hours [24]: "
+read MAX_AGE
 if [ -z "$MAX_AGE" ]; then
     MAX_AGE=24
-    print_message "Default value of 24 hours set"
+    print_message "⏳ Using default value of 24 hours"
+else
+    if [[ "$MAX_AGE" =~ ^[0-9]+$ ]]; then
+        print_message "⏳ Files will be kept for $MAX_AGE hours"
+    else
+        print_error "Invalid input. Using default value of 24 hours"
+        MAX_AGE=24
+    fi
 fi
 
 # Function to check Telegram connectivity
@@ -387,25 +493,34 @@ check_telegram_connection() {
 }
 
 # Check if proxy is needed
+print_step "🌐 Checking Connection to Telegram 🌐"
+
 if check_telegram_connection; then
-    print_message "Connection to Telegram is working, no proxy needed"
+    print_message "✨ Connection to Telegram is working perfectly! No proxy needed."
     USE_PROXY="n"
 else
-    print_warning "Unable to connect to Telegram"
+    print_warning "⚠️ Unable to establish connection to Telegram servers"
+    echo
+    echo -e "${CYAN}ℹ️  Proxy Configuration Options:${NC}"
+    echo -e "   ${YELLOW}•${NC} Using a proxy can help if Telegram is blocked"
+    echo -e "   ${YELLOW}•${NC} Supports SOCKS5, HTTP, and HTTPS proxies"
+    echo -e "   ${YELLOW}•${NC} You can skip this if you're unsure\n"
+    
     while true; do
-        read -p "🌐 Would you like to configure a proxy? (y/N): " USE_PROXY_INPUT
+        print_input_prompt "Would you like to configure a proxy? [y/N]: "
+        read USE_PROXY_INPUT
         case $USE_PROXY_INPUT in
             [Yy]* )
                 USE_PROXY="y"
                 break
                 ;;
             [Nn]* | "" )
-                print_warning "Continuing without proxy, bot may not work"
+                print_warning "Continuing without proxy configuration"
                 USE_PROXY="n"
                 break
                 ;;
             * )
-                print_error "Please enter y or n"
+                print_error "Please enter 'y' for yes or 'n' for no"
                 ;;
         esac
     done
@@ -511,12 +626,9 @@ if [[ $USE_PROXY =~ ^[Yy]$ ]]; then
     done
 fi
 
-# Create directory for bot
-mkdir -p /var/www/html/bot
-
 # Create config.json in project path
 print_message "Creating config.json file..."
-cat > config.json << EOL
+cat > "$BOT_PATH/config.json" << EOL
 {
     "api_id": "$API_ID",
     "api_hash": "$API_HASH",
@@ -524,7 +636,7 @@ cat > config.json << EOL
     "allowed_chat_ids": $ALLOWED_JSON,
     "file_max_age_hours": $MAX_AGE,
     "your_domain": "$HOST",
-    "download_path": "/var/www/html/dl"$([ ! -z "$USE_PROXY" ] && [ "$USE_PROXY" = "y" ] && echo ",
+    "download_path": "/dl"$([ ! -z "$USE_PROXY" ] && [ "$USE_PROXY" = "y" ] && echo ",
     \"proxy\": {
         \"scheme\": \"$PROXY_SCHEME\",
         \"server\": \"$PROXY_SERVER\",
@@ -535,56 +647,50 @@ cat > config.json << EOL
 }
 EOL
 
-# Copy files to final location and set permissions
-mkdir -p /var/www/html/bot
-cp bot.py config.json /var/www/html/bot/
-chown -R www-data:www-data /var/www/html/bot
-chmod 600 /var/www/html/bot/config.json
-chmod 600 config.json
+# Set proper permissions
+chmod 600 "$BOT_PATH/config.json"
+chown -R www-data:www-data "$BOT_PATH"
 
+print_step "🎉 Configuration Complete! 🎉"
 print_message "Configuration file created successfully"
 echo
-print_warning "Entered information:"
-echo "• API ID: $API_ID"
-echo "• API Hash: ${API_HASH:0:6}..."
-echo "• Bot Token: ${BOT_TOKEN:0:8}..."
-echo "• Number of allowed users: ${#ALLOWED_ARRAY[@]}"
-echo "• Maximum file age: $MAX_AGE hours"
+echo -e "${CYAN}📋 Configuration Summary:${NC}"
+echo -e "${MAGENTA}┌─────────────────────────────────────┐${NC}"
+echo -e "${MAGENTA}│${NC} ${BOLD}API ID:${NC}        ${GREEN}$API_ID${NC}"
+echo -e "${MAGENTA}│${NC} ${BOLD}API Hash:${NC}      ${GREEN}${API_HASH:0:6}...${NC}"
+echo -e "${MAGENTA}│${NC} ${BOLD}Bot Token:${NC}     ${GREEN}${BOT_TOKEN:0:8}...${NC}"
+echo -e "${MAGENTA}│${NC} ${BOLD}Allowed Users:${NC}  ${GREEN}${#ALLOWED_ARRAY[@]}${NC}"
+echo -e "${MAGENTA}│${NC} ${BOLD}File Age:${NC}      ${GREEN}$MAX_AGE hours${NC}"
 if [[ $USE_PROXY =~ ^[Yy]$ ]]; then
-    echo "• Proxy: $PROXY_SCHEME - $PROXY_SERVER:$PROXY_PORT"
+    echo -e "${MAGENTA}│${NC} ${BOLD}Proxy:${NC}         ${GREEN}$PROXY_SCHEME - $PROXY_SERVER:$PROXY_PORT${NC}"
 fi
+echo -e "${MAGENTA}└─────────────────────────────────────┘${NC}"
 echo
 
-# Create service file
-print_message "Creating service file..."
-cat > "$BOT_SERVICE" << EOL
-[Unit]
-Description=Telegram DL Bot Service
-After=network.target
 
-[Service]
-Type=simple
-User=root
-WorkingDirectory=$BOT_PATH
-ExecStart=/usr/bin/python3 $BOT_PATH/DLBot.py
-Restart=always
-RestartSec=10
-
-[Install]
-WantedBy=multi-user.target
-EOL
 
 # Set permissions and enable service
 chmod 644 "$BOT_SERVICE"
-print_message "Enabling service..."
+print_step "🚀 Starting Bot Service"
+print_message "Setting up system service '$SERVICE_NAME'..."
 systemctl daemon-reload
-systemctl enable dlbot.service
-systemctl start dlbot.service
+systemctl enable "$SERVICE_NAME.service"
+systemctl start "$SERVICE_NAME.service"
 
-print_message "Bot installed and started successfully!"
-print_message "You can check the service status with:"
-echo "   systemctl status dlbot.service"
-echo
-print_message "Services status:"
-echo "nginx: $(systemctl is-active nginx)"
-echo "telegrambot: $(systemctl is-active telegrambot)"
+print_step "🎉 Installation Complete! 🎉"
+print_message "Bot has been installed and started successfully!"
+
+echo -e "\n${CYAN}ℹ️  Quick Commands:${NC}"
+echo -e "${MAGENTA}┌─────────────────────────────────────┐${NC}"
+echo -e "${MAGENTA}│${NC} Check service status:${NC}"
+echo -e "${MAGENTA}│${NC} ${BLUE}systemctl status $SERVICE_NAME${NC}"
+echo -e "${MAGENTA}│${NC}"
+echo -e "${MAGENTA}│${NC} Restart the bot:${NC}"
+echo -e "${MAGENTA}│${NC} ${BLUE}systemctl restart $SERVICE_NAME${NC}"
+echo -e "${MAGENTA}└─────────────────────────────────────┘${NC}"
+
+echo -e "\n${CYAN}📊 Current Services Status:${NC}"
+echo -e "${MAGENTA}┌─────────────────────────────────────┐${NC}"
+echo -e "${MAGENTA}│${NC} nginx:       $(systemctl is-active nginx | sed 's/active/\\${GREEN}active\\${NC}/' | sed 's/inactive/\\${RED}inactive\\${NC}/')"
+echo -e "${MAGENTA}│${NC} $SERVICE_NAME: $(systemctl is-active $SERVICE_NAME | sed 's/active/\\${GREEN}active\\${NC}/' | sed 's/inactive/\\${RED}inactive\\${NC}/')"
+echo -e "${MAGENTA}└─────────────────────────────────────┘${NC}"
