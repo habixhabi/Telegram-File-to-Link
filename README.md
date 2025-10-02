@@ -26,13 +26,13 @@
 برای نصب مستقیم با پارامترها، از دستور زیر استفاده کنید:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/ArashAfkandeh/Telegram-File-to-Link/blob/main/install.sh | sudo bash -s -- 'YOUR_DOMAIN' 'YOUR_EMAIL' 'API_ID' 'API_HASH' 'BOT_TOKEN'
+curl -sSL https://raw.githubusercontent.com/ArashAfkandeh/Telegram-File-to-Link/main/install.sh | sudo bash -s -- 'YOUR_DOMAIN' 'YOUR_EMAIL' 'API_ID' 'API_HASH' 'BOT_TOKEN'
 ```
 
 **مثال:**
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/ArashAfkandeh/Telegram-File-to-Link/blob/main/install.sh | sudo bash -s -- 'bot.example.com' 'admin@example.com' '123456' 'abcdef1234567890abcdef1234567890' '5555555555:AAAAAAAAAAbbbbbbbbbbCCCCCCCCCC'
+curl -sSL https://raw.githubusercontent.com/ArashAfkandeh/Telegram-File-to-Link/main/install.sh | sudo bash -s -- 'bot.example.com' 'admin@example.com' '123456' 'abcdef1234567890abcdef1234567890' '5555555555:AAAAAAAAAAbbbbbbbbbbCCCCCCCCCC'
 ```
 
 ### روش ۲: نصب تعاملی (بدون پارامتر)
@@ -40,7 +40,7 @@ curl -sSL https://raw.githubusercontent.com/ArashAfkandeh/Telegram-File-to-Link/
 برای نصب تعاملی، می‌توانید مستقیماً از طریق curl اسکریپت را اجرا کنید:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/ArashAfkandeh/Telegram-File-to-Link/blob/main/install.sh | sudo bash
+curl -sSL https://raw.githubusercontent.com/ArashAfkandeh/Telegram-File-to-Link/main/install.sh | sudo bash
 ```
 
 یا اگر اسکریپت را دانلود کرده‌اید، بدون پارامتر اجرا کنید:
@@ -85,7 +85,7 @@ cd /opt/Telegram-File-to-Link && git pull && sudo systemctl restart Telegram-Fil
 برای حذف کامل ربات و تمام تنظیمات آن، دستور زیر را اجرا کنید:
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/ArashAfkandeh/Telegram-File-to-Link/blob/main/install.sh | sudo bash -s -- --uninstall
+curl -sSL https://raw.githubusercontent.com/ArashAfkandeh/Telegram-File-to-Link/main/install.sh | sudo bash -s -- --uninstall
 ```
 
 یا اگر اسکریپت را قبلاً دانلود کرده‌اید:
