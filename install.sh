@@ -458,7 +458,7 @@ echo -e "   ${YELLOW}•${NC} This helps manage server storage space"
 echo -e "   ${YELLOW}•${NC} Recommended: 24-72 hours depending on your needs"
 echo -e "   ${YELLOW}•${NC} Users should download their files within this time\n"
 
-print_input_prompt "Enter maximum file age in hours [24]: "
+print_input_prompt "Enter maximum file age in hours [Enter = 24]: "
 read MAX_AGE < /dev/tty
 if [ -z "$MAX_AGE" ]; then
     MAX_AGE=24
