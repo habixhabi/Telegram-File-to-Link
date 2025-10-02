@@ -20,7 +20,7 @@ print_warning() {
 }
 
 # Important paths
-BOT_PATH="/root/DLBot"
+BOT_PATH="/root/Telegram-File-to-Link"
 BOT_SERVICE="/etc/systemd/system/dlbot.service"
 
 # Check for root privileges
@@ -40,32 +40,17 @@ apt install -y python3 python3-pip python3-venv nginx socat curl wget git
 
 # Clone repository from GitHub
 print_message "Cloning repository from GitHub..."
-TEMP_DIR="/tmp/telegram-bot-temp"
-rm -rf "$TEMP_DIR"  # Clean up any previous temporary directory
-
 if [ -d "$BOT_PATH" ]; then
     print_warning "Directory $BOT_PATH already exists, updating..."
     cd "$BOT_PATH"
     git pull origin master || print_warning "Failed to update repository"
 else
-    # Clone to temporary directory first
-    git clone https://github.com/ArashAfkandeh/Telegram-File-to-Link.git "$TEMP_DIR" || {
+    # Clone repository directly to BOT_PATH
+    git clone https://github.com/ArashAfkandeh/Telegram-File-to-Link.git "$BOT_PATH" || {
         print_error "Failed to clone repository"
         exit 1
     }
-    
-    # Create bot directory
-    mkdir -p "$BOT_PATH"
-    
-    # Move all files from temp directory to bot directory
-    mv "$TEMP_DIR"/* "$BOT_PATH"/ || {
-        print_error "Failed to move files"
-        exit 1
-    }
-    
-    # Clean up temporary directory
-    rm -rf "$TEMP_DIR"
-    print_message "Repository files moved to $BOT_PATH successfully"
+    print_message "Repository cloned to $BOT_PATH successfully"
 fi
 
 # Install or update required Python packages
@@ -291,42 +276,66 @@ validate_bot_token() {
 }
 
 # Get api_id with validation
-while true; do
+for i in {1..3}; do
     read -p "🔑 Please enter Telegram api_id: " API_ID
     if [ -z "$API_ID" ]; then
-        print_error "api_id cannot be empty"
+        print_error "api_id cannot be empty (attempt $i of 3)"
+        if [ $i -eq 3 ]; then
+            print_error "Maximum attempts reached. Exiting..."
+            exit 1
+        fi
         continue
     fi
     if ! validate_api_id "$API_ID"; then
-        print_error "api_id must be an integer"
+        print_error "api_id must be an integer (attempt $i of 3)"
+        if [ $i -eq 3 ]; then
+            print_error "Maximum attempts reached. Exiting..."
+            exit 1
+        fi
         continue
     fi
     break
 done
 
 # Get api_hash with validation
-while true; do
+for i in {1..3}; do
     read -p "🔑 Please enter Telegram api_hash: " API_HASH
     if [ -z "$API_HASH" ]; then
-        print_error "api_hash cannot be empty"
+        print_error "api_hash cannot be empty (attempt $i of 3)"
+        if [ $i -eq 3 ]; then
+            print_error "Maximum attempts reached. Exiting..."
+            exit 1
+        fi
         continue
     fi
     if ! validate_api_hash "$API_HASH"; then
-        print_error "api_hash must be a 32-character hexadecimal string"
+        print_error "api_hash must be a 32-character hexadecimal string (attempt $i of 3)"
+        if [ $i -eq 3 ]; then
+            print_error "Maximum attempts reached. Exiting..."
+            exit 1
+        fi
         continue
     fi
     break
 done
 
 # Get bot_token with validation
-while true; do
+for i in {1..3}; do
     read -p "🤖 Please enter bot token: " BOT_TOKEN
     if [ -z "$BOT_TOKEN" ]; then
-        print_error "Bot token cannot be empty"
+        print_error "Bot token cannot be empty (attempt $i of 3)"
+        if [ $i -eq 3 ]; then
+            print_error "Maximum attempts reached. Exiting..."
+            exit 1
+        fi
         continue
     fi
     if ! validate_bot_token "$BOT_TOKEN"; then
-        print_error "Invalid bot token format"
+        print_error "Invalid bot token format (attempt $i of 3)"
+        if [ $i -eq 3 ]; then
+            print_error "Maximum attempts reached. Exiting..."
+            exit 1
+        fi
         continue
     fi
     break
@@ -403,28 +412,54 @@ else
 fi
 if [[ $USE_PROXY =~ ^[Yy]$ ]]; then
     # Proxy settings as required values
-    while true; do
+    MAX_PROXY_ATTEMPTS=3
+    PROXY_ATTEMPT=1
+    
+    while [ $PROXY_ATTEMPT -le $MAX_PROXY_ATTEMPTS ]; do
+        print_message "Proxy configuration attempt $PROXY_ATTEMPT of $MAX_PROXY_ATTEMPTS"
+        
+        # Get proxy type
         read -p "🔧 Enter proxy type (Enter = socks5): " PROXY_SCHEME
         if [ -z "$PROXY_SCHEME" ]; then
             PROXY_SCHEME="socks5"
             print_message "Proxy type set to socks5"
         fi
         
-        read -p "🖥️ Enter proxy server address: " PROXY_SERVER
-        if [ -z "$PROXY_SERVER" ]; then
-            print_error "Proxy address cannot be empty"
-            continue
-        fi
+        # Get proxy address with validation
+        for i in {1..3}; do
+            read -p "🖥️ Enter proxy server address: " PROXY_SERVER
+            if [ -z "$PROXY_SERVER" ]; then
+                print_error "Proxy address cannot be empty (attempt $i of 3)"
+                [ $i -eq 3 ] && {
+                    print_error "Maximum attempts reached for proxy address"
+                    exit 1
+                }
+                continue
+            fi
+            break
+        done
         
-        read -p "🔌 Enter proxy port: " PROXY_PORT
-        if [ -z "$PROXY_PORT" ]; then
-            print_error "Proxy port cannot be empty"
-            continue
-        fi
-        if ! [[ "$PROXY_PORT" =~ ^[0-9]+$ ]] || [ "$PROXY_PORT" -lt 1 ] || [ "$PROXY_PORT" -gt 65535 ]; then
-            print_error "Port must be a number between 1 and 65535"
-            continue
-        fi
+        # Get proxy port with validation
+        for i in {1..3}; do
+            read -p "🔌 Enter proxy port: " PROXY_PORT
+            if [ -z "$PROXY_PORT" ]; then
+                print_error "Proxy port cannot be empty (attempt $i of 3)"
+                [ $i -eq 3 ] && {
+                    print_error "Maximum attempts reached for proxy port"
+                    exit 1
+                }
+                continue
+            fi
+            if ! [[ "$PROXY_PORT" =~ ^[0-9]+$ ]] || [ "$PROXY_PORT" -lt 1 ] || [ "$PROXY_PORT" -gt 65535 ]; then
+                print_error "Port must be a number between 1 and 65535 (attempt $i of 3)"
+                [ $i -eq 3 ] && {
+                    print_error "Maximum attempts reached for proxy port"
+                    exit 1
+                }
+                continue
+            fi
+            break
+        done
         
         # Test proxy with curl
         print_message "Testing proxy connection..."
@@ -437,13 +472,18 @@ if [[ $USE_PROXY =~ ^[Yy]$ ]]; then
         if curl --connect-timeout 10 -x "$CURL_PROXY" -s "https://api.telegram.org" >/dev/null 2>&1; then
             print_message "Successfully connected to proxy"
             
+            # Get proxy authentication if needed
             read -p "👤 Enter proxy username (Enter = no authentication): " PROXY_USER
             if [ ! -z "$PROXY_USER" ]; then
-                while true; do
+                for i in {1..3}; do
                     read -s -p "🔑 Enter proxy password: " PROXY_PASS
                     echo
                     if [ -z "$PROXY_PASS" ]; then
-                        print_error "Password cannot be empty"
+                        print_error "Password cannot be empty (attempt $i of 3)"
+                        [ $i -eq 3 ] && {
+                            print_error "Maximum attempts reached for proxy password"
+                            exit 1
+                        }
                         continue
                     fi
                     break
@@ -452,12 +492,22 @@ if [[ $USE_PROXY =~ ^[Yy]$ ]]; then
             break
         else
             print_error "Failed to connect to proxy"
-            read -p "🔄 Would you like to try again? (Y/n): " RETRY
-            if [[ $RETRY =~ ^[Nn]$ ]]; then
+            if [ $PROXY_ATTEMPT -lt $MAX_PROXY_ATTEMPTS ]; then
+                read -p "🔄 Would you like to try again? (Y/n): " RETRY
+                if [[ $RETRY =~ ^[Nn]$ ]]; then
+                    print_warning "Continuing without proxy"
+                    USE_PROXY="n"
+                    break
+                fi
+            else
+                print_error "Maximum proxy configuration attempts reached"
+                print_warning "Continuing without proxy"
                 USE_PROXY="n"
                 break
             fi
         fi
+        
+        PROXY_ATTEMPT=$((PROXY_ATTEMPT + 1))
     done
 fi
 
