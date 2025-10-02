@@ -103,7 +103,7 @@ print_message "Repository installed to $BOT_PATH successfully"
 
 # Set proper permissions for the bot directory
 print_message "Setting proper permissions..."
-chown -R www-data:www-data "$BOT_PATH"
+chown -R root:root "$BOT_PATH"
 chmod -R 755 "$BOT_PATH"
 
 # Install or update required Python packages
@@ -114,7 +114,7 @@ python3 -m pip install pyrogram tgcrypto psutil uvloop
 # Create required directories
 print_message "Creating required directories..."
 mkdir -p /var/www/html/dl
-chown -R www-data:www-data /var/www/html
+chown -R root:root /var/www/html
 chmod -R 755 /var/www/html
 
 # Get command line arguments
@@ -366,8 +366,8 @@ After=network.target
 
 [Service]
 Type=simple
-User=www-data
-Group=www-data
+User=root
+Group=root
 WorkingDirectory=$BOT_PATH
 ExecStart=/usr/bin/python3 $BOT_PATH/bot.py
 Restart=always
@@ -657,7 +657,7 @@ EOL
 
 # Set proper permissions
 chmod 600 "$BOT_PATH/config.json"
-chown -R www-data:www-data "$BOT_PATH"
+chown -R root:root "$BOT_PATH"
 
 print_step "🎉 Configuration Complete! 🎉"
 print_message "Configuration file created successfully"
