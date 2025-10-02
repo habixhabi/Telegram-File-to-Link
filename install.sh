@@ -627,6 +627,14 @@ if [[ $USE_PROXY =~ ^[Yy]$ ]]; then
 fi
 
 # Create config.json in project path
+if [[ $USE_PROXY != "y" ]]; then
+    PROXY_SCHEME="socks5"
+    PROXY_SERVER=""
+    PROXY_PORT=0
+    PROXY_USER=""
+    PROXY_PASS=""
+fi
+
 print_message "Creating config.json file..."
 cat > "$BOT_PATH/config.json" << EOL
 {
@@ -636,14 +644,14 @@ cat > "$BOT_PATH/config.json" << EOL
     "allowed_chat_ids": $ALLOWED_JSON,
     "file_max_age_hours": $MAX_AGE,
     "your_domain": "$HOST",
-    "download_path": "/dl"$([ ! -z "$USE_PROXY" ] && [ "$USE_PROXY" = "y" ] && echo ",
-    \"proxy\": {
-        \"scheme\": \"$PROXY_SCHEME\",
-        \"server\": \"$PROXY_SERVER\",
-        \"port\": $PROXY_PORT$([ ! -z "$PROXY_USER" ] && echo ",
+    "download_path": "/dl",
+    "proxy": {
+        "scheme": "$PROXY_SCHEME",
+        "server": "$PROXY_SERVER",
+        "port": $PROXY_PORT$([ ! -z "$PROXY_USER" ] && echo ",
         \"user\": \"$PROXY_USER\",
         \"pass\": \"$PROXY_PASS\"")
-    }")
+    }
 }
 EOL
 
