@@ -72,6 +72,16 @@ curl -sSL https://raw.githubusercontent.com/ArashAfkandeh/Telegram-File-to-Link/
 sudo journalctl -u Telegram-File-to-Link -f
 ```
 
+
+### ارتقاء 🔄
+
+برای به‌روزرسانی به آخرین نسخه:
+```bash
+cd /opt/Telegram-File-to-Link
+git pull
+sudo systemctl restart Telegram-File-to-Link
+```
+
 ### حذف ربات
 
 برای حذف کامل ربات و تمام تنظیمات آن، دستور زیر را اجرا کنید:
@@ -84,16 +94,6 @@ curl -sSL https://raw.githubusercontent.com/ArashAfkandeh/Telegram-File-to-Link/
 
 ```bash
 ./install.sh --uninstall
-```
-
-### ارتقاء 🔄
-
-برای به‌روزرسانی به آخرین نسخه:
-
-```bash
-cd /opt/Telegram-File-to-Link
-git pull
-sudo systemctl restart Telegram-File-to-Link
 ```
 
 ## لایسنس 📝
