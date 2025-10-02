@@ -77,7 +77,7 @@ sudo journalctl -u Telegram-File-to-Link -f
 
 برای به‌روزرسانی به آخرین نسخه:
 ```bash
-cd /opt/Telegram-File-to-Link && git pull && sudo systemctl restart Telegram-File-to-Link
+cd /opt/Telegram-File-to-Link && git pull && sudo systemctl restart Telegram-File-to-Link && sudo systemctl status Telegram-File-to-Link
 ```
 
 ### حذف ربات
