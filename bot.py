@@ -146,13 +146,18 @@ def cleanup_old_files():
                     try:
                         os.remove(file_path)
                         print(f"🧹 حذف فایل قدیمی: {os.path.basename(file_path)}")
-                        
+
                         # بروزرسانی درصد استفاده
                         st = os.statvfs(DOWNLOAD_PATH)
                         total_space = st.f_blocks * st.f_frsize
                         free_space = st.f_bavail * st.f_frsize
                         used_percent = ((total_space - free_space) / total_space) * 100 if total_space > 0 else 0
-                        
+
+                        # پس از حذف موفق، بروزرسانی config.json
+                        try:
+                            update_config_file_list()
+                        except Exception:
+                            pass
                     except Exception as e:
                         print(f"❌ خطا در حذف {os.path.basename(file_path)}: {e}")
 
@@ -161,8 +166,6 @@ def cleanup_old_files():
 
 # تعریف مسیر پایه برای ذخیره فایل‌ها
 BASE_STORAGE_PATH = "/var/www/html"
-
-
 
 # خواندن تنظیمات از config.json
 def load_config():
@@ -255,6 +258,10 @@ class DownloadManager:
                     if os.path.exists(download.file_path):
                         os.remove(download.file_path)
                         print(f"🗑️ فایل نیمه‌کاره حذف شد: {download.file_path}")
+                        try:
+                            update_config_file_list()
+                        except Exception:
+                            pass
                 except Exception as e:
                     print(f"❌ خطا در حذف فایل نیمه‌کاره: {e}")
             
@@ -411,6 +418,46 @@ def get_file_stats():
             'files': []
         }
 
+
+def update_config_file_list():
+    """
+    نوشتن آرایه فایل‌ها در فایل `files.json` کنار اسکریپت.
+    هر آیتم شامل: name, size_bytes, public_url
+    """
+    try:
+        files = []
+        for filename in os.listdir(DOWNLOAD_PATH):
+            file_path = os.path.join(DOWNLOAD_PATH, filename)
+            if os.path.isfile(file_path):
+                size = os.path.getsize(file_path)
+                public_url = build_public_url(filename)
+                mtime = os.path.getmtime(file_path)
+                files.append({
+                    'name': filename,
+                    'size_bytes': size,
+                    'public_url': public_url,
+                    'mtime': mtime
+                })
+
+        # Write files.json into the webroot (BASE_STORAGE_PATH) so the web server can serve it
+        web_files_path = os.path.join(BASE_STORAGE_PATH, 'files.json')
+        try:
+            os.makedirs(BASE_STORAGE_PATH, exist_ok=True)
+        except Exception:
+            pass
+
+        # sort by mtime descending (newest first)
+        files.sort(key=lambda x: x.get('mtime', 0), reverse=True)
+
+        # remove mtime from output
+        out_files = [{k: v for k, v in f.items() if k != 'mtime'} for f in files]
+        with open(web_files_path, 'w', encoding='utf-8') as f:
+            json.dump(out_files, f, ensure_ascii=False, indent=4)
+
+        print(f"✅ {web_files_path} updated with {len(files)} files")
+    except Exception as e:
+        print(f"❌ خطا در بروزرسانی files.json: {e}")
+
 # ایجاد کلاینت ربات با پشتیبانی پروکسی
 proxy_config = get_proxy_config()
 if proxy_config:
@@ -543,6 +590,10 @@ async def handle_file(client: Client, message: Message):
                     if os.path.exists(temp_file):
                         os.remove(temp_file)
                         print(f"🗑️ فایل موقت حذف شد: {temp_file}")
+                        try:
+                            update_config_file_list()
+                        except Exception:
+                            pass
                 except Exception as e:
                     print(f"❌ خطا در حذف فایل موقت: {e}")
             
@@ -555,6 +606,10 @@ async def handle_file(client: Client, message: Message):
             if file_path and os.path.exists(file_path):
                 try:
                     os.remove(file_path)
+                    try:
+                        update_config_file_list()
+                    except Exception:
+                        pass
                 except Exception:
                     pass
             
@@ -621,12 +676,21 @@ async def handle_file(client: Client, message: Message):
             
         # بررسی و پاکسازی خودکار در صورت نیاز
         cleanup_old_files()
+        # بروزرسانی لیست فایل‌ها در config.json پس از دانلود و احتمالی حذف
+        try:
+            update_config_file_list()
+        except Exception as e:
+            print(f"⚠️ خطا در بروزرسانی لیست فایل‌ها پس از دانلود: {e}")
         
     except Exception as e:
         # حذف فایل نیمه‌کاره در صورت خطا
         if 'file_path' in locals() and file_path and os.path.exists(file_path):
             try:
                 os.remove(file_path)
+                try:
+                    update_config_file_list()
+                except Exception:
+                    pass
             except Exception:
                 pass
         
