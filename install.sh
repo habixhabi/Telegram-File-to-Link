@@ -117,6 +117,45 @@ mkdir -p /var/www/html/dl
 chown -R root:root /var/www/html
 chmod -R 755 /var/www/html
 
+# Deploy index.html from the repository to the webroot if present
+if [ -f "$BOT_PATH/index.html" ]; then
+    cp "$BOT_PATH/index.html" /var/www/html/index.html
+    chown root:root /var/www/html/index.html
+    chmod 644 /var/www/html/index.html
+    print_message "index.html deployed to /var/www/html/index.html"
+else
+    print_warning "No index.html found in $BOT_PATH — skipping deployment to /var/www/html"
+fi
+
+# Extract icons.tar.gz to /var/www/html if present
+if [ -f "$BOT_PATH/icons.tar.gz" ]; then
+    # Remove existing icons directory if it exists
+    if [ -d "/var/www/html/icons" ]; then
+        rm -rf "/var/www/html/icons"
+        print_message "Existing /var/www/html/icons directory removed"
+    fi
+
+    # Extract icons.tar.gz to /var/www/html
+    tar -xzf "$BOT_PATH/icons.tar.gz" -C /var/www/html
+    chown -R root:root /var/www/html/icons
+    chmod -R 755 /var/www/html/icons
+    print_message "icons.tar.gz extracted to /var/www/html/icons"
+    
+    # Remove icons.tar.gz after extraction
+    rm -f "$BOT_PATH/icons.tar.gz"
+    print_message "icons.tar.gz removed from $BOT_PATH"
+else
+    print_warning "No icons.tar.gz found in $BOT_PATH — skipping extraction to /var/www/html"
+fi
+
+# Remove install.sh if present
+if [ -f "$BOT_PATH/install.sh" ]; then
+    rm -f "$BOT_PATH/install.sh"
+    print_message "install.sh removed from $BOT_PATH"
+else
+    print_warning "No install.sh found in $BOT_PATH — skipping removal"
+fi
+
 # Get command line arguments
 print_step "💫 Welcome to Telegram File Hosting Bot Setup 💫"
 print_info "Please provide the following information to configure your bot:"
@@ -292,8 +331,6 @@ server {
     ssl_session_timeout 1d;
     ssl_session_cache shared:SSL:10m;
     ssl_session_tickets off;
-    ssl_stapling on;
-    ssl_stapling_verify on;
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" always;
     add_header X-Frame-Options DENY always;
     add_header X-Content-Type-Options nosniff always;
