@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>گالری فایل‌ها</title>
+    <style>
+        :root {
+            --bg-color: #f4f7f6;
+            --card-bg-color: #ffffff;
+            --header-bg-color: #ffffff;
+            --footer-bg-color: #ffffff;
+            --text-color: #333;
+            --card-text-color: #555;
+            --border-color: #e0e0e0;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+            --accent-color: #007bff;
+            --hover-bg-color: #f0f0f0;
+        }
+
+        body.dark {
+            --bg-color: #121212;
+            --card-bg-color: #1e1e1e;
+            --header-bg-color: #1e1e1e;
+            --footer-bg-color: #1e1e1e;
+            --text-color: #e0e0e0;
+            --card-text-color: #b0b0b0;
+            --border-color: #333;
+            --shadow-color: rgba(0, 0, 0, 0.5);
+            --accent-color: #4a9eff;
+            --hover-bg-color: #2a2a2a;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+        
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px;
+            background: var(--header-bg-color);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .header-text {
+            flex-grow: 1;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: var(--text-color);
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.8;
+            color: var(--card-text-color);
+        }
+
+        /* Theme Switch */
+        .theme-switch-wrapper {
+            display: flex;
+            align-items: center;
+            margin-right: 20px;
+        }
+        .theme-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+        .theme-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "🌞";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+        }
+        input:checked + .slider {
+            background-color: var(--accent-color);
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+            content: "🌙";
+        }
+        
+        .filter-tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+            background: var(--card-bg-color);
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 4px 15px var(--shadow-color);
+            flex-wrap: wrap;
+        }
+        
+        .filter-tab {
+            padding: 8px 16px;
+            margin: 5px;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: background 0.3s, color 0.3s;
+        }
+        
+        .filter-tab:hover {
+            background: var(--hover-bg-color);
+        }
+        
+        .filter-tab.active {
+            background: var(--accent-color);
+            color: #fff;
+            border-color: var(--accent-color);
+        }
+        
+        .file-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+            align-items: stretch;
+        }
+        
+        .file-card {
+            background: var(--card-bg-color);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 20px var(--shadow-color);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .file-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px var(--shadow-color);
+        }
+
+        .media-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            background: var(--hover-bg-color);
+        }
+
+        .card-video .media-container {
+            position: relative;
+            height: 0;
+            padding-bottom: 56.25%;
+            background: #000;
+        }
+        
+        .card-video video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .card-image .media-container {
+            padding: 0;
+            background: none;
+        }
+        
+        .card-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .card-audio .media-container {
+            order: 2;
+            height: auto;
+            padding: 15px 20px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .card-audio audio {
+            width: 100%;
+        }
+        
+        .file-info {
+            padding: 12px 14px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* [CORRECTION] - Added 'direction: ltr' to force layout */
+        .title-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            direction: ltr;
+        }
+
+        .title-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            overflow: hidden;
+        }
+
+        .file-icon {
+            width: 28px;
+            height: 28px;
+            flex-shrink: 0;
+        }
+        
+        .file-title {
+            font-size: 1.2rem;
+            color: var(--text-color);
+            margin: 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-align: left;
+            direction: ltr;
+        }
+
+        .file-size {
+            flex-shrink: 0;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--card-text-color);
+            background-color: var(--hover-bg-color);
+            padding: 3px 8px;
+            border-radius: 12px;
+        }
+        
+        .download-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background: var(--accent-color);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            font-weight: bold;
+            transition: background-color 0.3s, transform 0.2s;
+            margin-top: auto;
+        }
+
+        .download-btn:hover {
+            background: #0056b3;
+            transform: scale(1.05);
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background: var(--footer-bg-color);
+            border-radius: 10px;
+            font-size: 0.9rem;
+            color: var(--card-text-color);
+            box-shadow: 0 4px 15px var(--shadow-color);
+        }
+        
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                text-align: center;
+            }
+            .header-text {
+                order: 2;
+            }
+            .theme-switch-wrapper {
+                order: 1;
+                margin-bottom: 20px;
+                margin-right: 0;
+            }
+            .file-grid {
+                grid-template-columns: 1fr;
+            }
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-text">
+                <h1>گالری فایل‌ها</h1>
+                <p class="subtitle" id="subtitle">در حال بارگذاری...</p>
+            </div>
+            <div class="theme-switch-wrapper">
+                <label class="theme-switch" for="checkbox">
+                    <input type="checkbox" id="checkbox" />
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </header>
+        
+        <main>
+            <div class="filter-tabs" id="filterTabs">
+                <button class="filter-tab active" data-filter="video">ویدیو</button>
+                <button class="filter-tab" data-filter="image">تصویر</button>
+                <button class="filter-tab" data-filter="audio">صدا</button>
+                <button class="filter-tab" data-filter="document">سند</button>
+                <button class="filter-tab" data-filter="other">سایر</button>
+            </div>
+
+            <div class="file-grid" id="fileGrid">
+                </div>
+        </main>
+        
+        <footer>
+            <p>© 2023 گالری فایل‌ها - تمامی حقوق محفوظ است.</p>
+        </footer>
+    </div>
+    <script>
+        (function(){
+            const candidateUrls = [
+                './files.json',
+                '/files.json',
+                '/opt/Telegram-File-to-Link/files.json'
+            ];
+
+            function formatBytes(bytes){
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B','KB','MB','GB','TB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            function getFileType(name){
+                if (/\.(mp4|webm|ogg|m3u8|avi|mov|wmv|flv|mkv)$/i.test(name)) return 'video';
+                if (/\.(jpg|jpeg|png|gif|bmp|svg|webp)$/i.test(name)) return 'image';
+                if (/\.(mp3|wav|ogg|flac|aac|m4a)$/i.test(name)) return 'audio';
+                if (/\.(pdf|doc|docx|xls|xlsx|ppt|pptx|txt|rtf)$/i.test(name)) return 'document';
+                return 'other';
+            }
+
+            async function getFileIcon(filename) {
+                const extension = filename.split('.').pop().toLowerCase();
+                const iconContainer = document.createElement('div');
+                iconContainer.className = 'file-icon';
+
+                const createIconFromUrl = async (url) => {
+                    const response = await fetch(url);
+                    if (!response.ok) throw new Error(`SVG not found: ${url}`);
+                    const svgText = await response.text();
+                    
+                    const img = document.createElement('img');
+                    img.src = `data:image/svg+xml;base64,${btoa(svgText)}`;
+                    img.style.width = '100%';
+                    img.style.height = '100%';
+                    
+                    iconContainer.innerHTML = ''; 
+                    iconContainer.appendChild(img);
+                };
+
+                try {
+                    await createIconFromUrl(`icons/${extension}.svg`);
+                } catch (error) {
+                    try {
+                        await createIconFromUrl('icons/default.svg');
+                    } catch (fallbackError) {
+                        iconContainer.innerHTML = '<span style="font-size: 24px;">📄</span>';
+                    }
+                }
+                return iconContainer;
+            }
+            
+            async function fetchConfig(){
+                for(const url of candidateUrls){
+                    try{
+                        const resp = await fetch(url, {cache: 'no-cache'});
+                        if(!resp.ok) continue;
+                        const data = await resp.json();
+                        if(Array.isArray(data)) return data;
+                        if(data && Array.isArray(data.files)) return data.files;
+                    }catch(e){
+                        // ignore and try next
+                    }
+                }
+                throw new Error('files.json یافت نشد یا ساختار آن نامعتبر است.');
+            }
+
+            function createDownloadButton(url) {
+                const btn = document.createElement('a');
+                btn.href = url;
+                btn.className = 'download-btn';
+                btn.textContent = 'دانلود فایل';
+                btn.target = '_blank';
+                return btn;
+            }
+
+            async function createFileCard(file){
+                const fileType = getFileType(file.name);
+                const card = document.createElement('div');
+                card.className = `file-card card-${fileType}`;
+                card.dataset.type = fileType;
+                
+                if (fileType === 'video' || fileType === 'image') {
+                    const container = document.createElement('div');
+                    container.className = 'media-container';
+
+                    if (fileType === 'video') {
+                        const video = document.createElement('video');
+                        video.controls = true;
+                        video.preload = 'metadata';
+                        video.setAttribute('playsinline','');
+                        video.innerHTML = `<source src="${file.public_url}" type="video/mp4">مرورگر شما از ویدیو پشتیبانی نمی‌کند.`;
+                        container.appendChild(video);
+                    } 
+                    else if (fileType === 'image') {
+                        const img = document.createElement('img');
+                        img.src = file.public_url;
+                        img.alt = file.name;
+                        img.loading = 'lazy';
+                        container.appendChild(img);
+                    }
+                    card.appendChild(container);
+                }
+
+                const info = document.createElement('div');
+                info.className = 'file-info';
+                
+                const titleWrapper = document.createElement('div');
+                titleWrapper.className = 'title-wrapper';
+                
+                const titleGroup = document.createElement('div');
+                titleGroup.className = 'title-group';
+
+                titleGroup.appendChild(await getFileIcon(file.name));
+
+                const title = document.createElement('h3');
+                const fileNameWithoutExt = file.name.lastIndexOf('.') > 0
+                    ? file.name.substring(0, file.name.lastIndexOf('.'))
+                    : file.name;
+                title.textContent = fileNameWithoutExt;
+                title.title = file.name;
+                title.className = 'file-title';
+
+                titleGroup.appendChild(title);
+                titleWrapper.appendChild(titleGroup);
+
+                const sizeSpan = document.createElement('span');
+                sizeSpan.className = 'file-size';
+                sizeSpan.textContent = formatBytes(file.size_bytes);
+                titleWrapper.appendChild(sizeSpan);
+
+                info.appendChild(titleWrapper);
+                
+                if (fileType !== 'video' && fileType !== 'audio') {
+                    info.appendChild(createDownloadButton(file.public_url));
+                }
+                
+                card.appendChild(info);
+
+                if (fileType === 'audio') {
+                    const container = document.createElement('div');
+                    container.className = 'media-container';
+                    const audio = document.createElement('audio');
+                    audio.controls = true;
+                    audio.preload = 'metadata';
+                    audio.innerHTML = `<source src="${file.public_url}" type="audio/mpeg">مرورگر شما از این فرمت صوتی پشتیبانی نمی‌کند.`;
+                    container.appendChild(audio);
+                    card.appendChild(container);
+                }
+
+                return card;
+            }
+
+            function setupFilterTabs() {
+                const tabs = document.querySelectorAll('.filter-tab');
+                tabs.forEach(tab => {
+                    tab.addEventListener('click', () => {
+                        tabs.forEach(t => t.classList.remove('active'));
+                        tab.classList.add('active');
+                        
+                        const filter = tab.dataset.filter;
+                        const cards = document.querySelectorAll('.file-card');
+                        
+                        cards.forEach(card => {
+                            if (card.dataset.type === filter) {
+                                card.style.display = 'flex';
+                            } else {
+                                card.style.display = 'none';
+                            }
+                        });
+                    });
+                });
+            }
+
+            function initTheme() {
+                const toggleSwitch = document.querySelector('.theme-switch input[type="checkbox"]');
+                const currentTheme = localStorage.getItem('theme');
+
+                if (currentTheme === 'dark') {
+                    document.body.classList.add('dark');
+                    toggleSwitch.checked = true;
+                }
+
+                toggleSwitch.addEventListener('change', function(e) {
+                    if (e.target.checked) {
+                        document.body.classList.add('dark');
+                        localStorage.setItem('theme', 'dark');
+                    } else {
+                        document.body.classList.remove('dark');
+                        localStorage.setItem('theme', 'light');
+                    }
+                });
+            }
+
+            async function init(){
+                const subtitleEl = document.getElementById('subtitle');
+                try{
+                    subtitleEl.textContent = 'در حال بارگذاری فهرست فایل‌ها...';
+                    const files = await fetchConfig();
+
+                    const grid = document.getElementById('fileGrid');
+                    grid.innerHTML = '';
+
+                    files.reverse();
+
+                    const cards = await Promise.all(files.map(f => createFileCard(f)));
+                    cards.forEach(card => grid.appendChild(card));
+
+                    setupFilterTabs();
+                    
+                    const initialFilter = document.querySelector('.filter-tab.active').dataset.filter;
+                    const allCards = document.querySelectorAll('.file-card');
+                    allCards.forEach(card => {
+                        if (card.dataset.type === initialFilter) {
+                            card.style.display = 'flex';
+                        } else {
+                            card.style.display = 'none';
+                        }
+                    });
+
+                    subtitleEl.textContent = `تعداد فایل‌ها: ${files.length}`;
+                }catch(err){
+                    subtitleEl.textContent = 'خطا در بارگذاری فایل‌ها: ' + err.message;
+                    const grid = document.getElementById('fileGrid');
+                    grid.innerHTML = '<p style="text-align:center; background:var(--card-bg-color); color:var(--card-text-color); padding:20px; border-radius:10px; box-shadow: 0 4px 15px var(--shadow-color);">فایل قابل بارگذاری نیست. مطمئن شوید که فایل files.json در دسترس است.</p>';
+                }
+            }
+
+            document.addEventListener('DOMContentLoaded', () => {
+                initTheme();
+                init();
+            });
+        })();
+    </script>
+</body>
+</html>
