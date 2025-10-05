@@ -1,23 +1,8 @@
 import os
-import sys
-import json
-import time
-import glob
-import psutil
-import signal
-import asyncio
-import logging
-import traceback
-import gc
-import uvloop
-from pyrogram import Client, filters, types
-from typing import Dict, Any
-from dataclasses import dataclass
-from datetime import datetime
-from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 
-# نصب uvloop برای افزایش سرعت event loop
-uvloop.install()
+api_id = os.environ.get("API_ID")
+api_hash = os.environ.get("API_HASH")
+bot_token = os.environ.get("BOT_TOKEN")
 
 # متغیرهای کنترل وضعیت برنامه
 running = True
