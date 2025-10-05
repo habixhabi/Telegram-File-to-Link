@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from pyrogram.types import Message
 
 api_id = os.environ.get("API_ID")
 api_hash = os.environ.get("API_HASH")
