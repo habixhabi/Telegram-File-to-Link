@@ -1,6 +1,7 @@
 import os
 import json
 from pyrogram import Client
+from pyrogram import filters
 import time
 from dataclasses import dataclass
 from pyrogram.types import Message
