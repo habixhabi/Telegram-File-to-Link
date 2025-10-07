@@ -3,6 +3,7 @@ import time
 from dataclasses import dataclass
 from pyrogram.types import Message
 import asyncio
+from typing import Dict
 
 api_id = os.environ.get("API_ID")
 api_hash = os.environ.get("API_HASH")
