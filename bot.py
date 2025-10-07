@@ -1,14 +1,13 @@
 import os
-import json
-from pyrogram import Client
-from pyrogram import filters
 import time
-from dataclasses import dataclass
-from pyrogram.types import Message
 import asyncio
 import psutil
+import gc
+import json
+from dataclasses import dataclass
 from typing import Dict
-
+from pyrogram import Client, filters
+from pyrogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
 api_id = os.environ.get("API_ID")
 api_hash = os.environ.get("API_HASH")
 bot_token = os.environ.get("BOT_TOKEN")
